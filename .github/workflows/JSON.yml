@@ -10,7 +10,7 @@ on:
       end_page:
         description: '终止页码'
         required: true
-        default: '1700'
+        default: '1744'
 
 jobs:
   scrape:
