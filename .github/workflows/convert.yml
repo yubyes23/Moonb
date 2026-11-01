@@ -1,0 +1,32 @@
+name: Convert and Merge JSON
+
+on:
+  workflow_dispatch:
+
+jobs:
+  convert-and-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip
+
+      - name: Run conversion and merge
+        run: python py/convert_and_merge.py
+
+      - name: Commit and push results
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "action@github.com"
+          git add test/Q*.json test/Q000.json
+          git commit -m "Convert and merge JSON at $(date '+%Y-%m-%d %H:%M:%S')" || exit 0
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

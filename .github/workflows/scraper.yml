@@ -1,0 +1,56 @@
+name: Real-time Scraper Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_page:
+        description: '起始页码'
+        required: true
+        default: '1'
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run Scraper Loop
+        run: |
+          PAGE=${{ github.event.inputs.start_page }}
+          while [ $PAGE -lt 3000 ]
+          do
+            echo "-----------------------------------"
+            OUTPUT=$(python py/scraper.py $PAGE)
+            echo "$OUTPUT"
+            
+            # 提交并推送
+            git config --global user.name "Scraper Bot"
+            git config --global user.email "bot@github.com"
+            if [ -d "test" ]; then
+              git add test/
+              if ! git diff --cached --quiet; then
+                git commit -m "Add hsck_page_$PAGE.json"
+                git push
+              fi
+            fi
+
+            # 逻辑判断
+            if [[ "$OUTPUT" == *"STOP"* ]] || [[ "$OUTPUT" == *"END"* ]]; then
+              break
+            fi
+
+            PAGE=$((PAGE+1))
+            sleep 1
+          done

@@ -1,0 +1,55 @@
+name: Range Page Scraper
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_page:
+        description: '起始页码'
+        required: true
+        default: '1001'
+      end_page:
+        description: '终止页码'
+        required: true
+        default: '1300'
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run Range Scraper
+        run: |
+          START=${{ github.event.inputs.start_page }}
+          END=${{ github.event.inputs.end_page }}
+          
+          # 脚本内部逻辑也可以循环，但为了实时看到每页提交，我们在 Shell 里循环
+          for (( PAGE=$START; PAGE<=$END; PAGE++ ))
+          do
+            echo "-----------------------------------"
+            python py/range_scraper.py $PAGE $PAGE
+            
+            # 实时 Git 提交
+            git config --global user.name "Range Bot"
+            git config --global user.email "bot@github.com"
+            if [ -d "test" ]; then
+              git add test/
+              if ! git diff --cached --quiet; then
+                git commit -m "Add hsck_page_$PAGE.json (Range Task)"
+                git push
+              fi
+            fi
+            sleep 1
+          done

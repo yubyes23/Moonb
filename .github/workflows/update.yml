@@ -1,0 +1,38 @@
+name: HSCK Sliding Sync
+
+on:
+  workflow_dispatch: # 手动触发
+  schedule:
+    - cron: '0 */4 * * *' # 每6小时运行一次
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Step 1 - Aggregate Index
+        run: python py/aggregator.py
+
+      - name: Step 2 - Sync and Slide Update
+        run: python py/sync_scraper.py
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "Bot-Sync"
+          git config --global user.email "bot@github.com"
+          git add test/
+          git commit -m "Automated sliding sync update" || exit 0
+          git push
