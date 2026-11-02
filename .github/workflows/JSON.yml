@@ -6,11 +6,11 @@ on:
       start_page:
         description: '起始页码'
         required: true
-        default: '1301'
+        default: '331'
       end_page:
         description: '终止页码'
         required: true
-        default: '1744'
+        default: '667'
 
 jobs:
   scrape:
